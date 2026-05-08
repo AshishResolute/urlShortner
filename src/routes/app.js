@@ -24,6 +24,7 @@ app.use((err,req,res,next)=>{
         timeStamp:new Date().toLocaleString(),
         internalCode:err.internalCode||err.message
     }
+    res.status(statusCode).json(ErrorMessage)
 })
 
 export {app}
