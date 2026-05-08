@@ -77,7 +77,7 @@ export const login = async (req, res, next) => {
     res.cookie(`refreshTokenCookie`,refreshToken,{
       maxAge:7*24*3600*1000,
       httpOnly:true,
-      samSite:'strict'
+      sameSite:'strict'
     })
     res.status(200).json({
       success: true,
