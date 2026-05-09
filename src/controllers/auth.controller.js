@@ -3,6 +3,7 @@ import { loginSchema, signUpSchema } from "../validator/validator.js";
 import bcrypt from "bcrypt";
 import prisma from "../config/prisma.js";
 import jwt from "jsonwebtoken";
+
 export const signUp = async (req, res, next) => {
   try {
     let { error, value } = signUpSchema.validate(req.body);
@@ -73,12 +74,24 @@ export const login = async (req, res, next) => {
       { expiresIn: "15m" },
     );
 
-    const refreshToken = jwt.sign({id:findUserInfo.id},process.env.JWT_REFRESH_KEY,{expiresIn:'7d'});
-    res.cookie(`refreshTokenCookie`,refreshToken,{
-      maxAge:7*24*3600*1000,
-      httpOnly:true,
-      sameSite:'strict'
-    })
+    const refreshToken = jwt.sign(
+      { id: findUserInfo.id },
+      process.env.JWT_REFRESH_KEY,
+      { expiresIn: "7d" },
+    );
+    await prisma.users.update({
+      where: {
+        id: findUserInfo.id,
+      },
+      data: {
+        refresh_token: refreshToken,
+      },
+    });
+    res.cookie(`refreshToken`, refreshToken, {
+      maxAge: 7 * 24 * 3600 * 1000,
+      httpOnly: true,
+      sameSite: "strict",
+    });
     res.status(200).json({
       success: true,
       message: `Login successfull!,Welcome Back ${findUserInfo.user_name}`,
@@ -87,6 +100,70 @@ export const login = async (req, res, next) => {
     });
   } catch (error) {
     console.log(error.message);
+    next(error);
+  }
+};
+
+export const refresh = async (req, res, next) => {
+  try {
+    const token = req.cookies.refreshToken;
+    if (!token)
+      return next(
+        new customErrorClass(`Token not recieved`, 401, `Token not found`),
+      );
+
+      // jwt.validate returns the payload
+    const decode = jwt.verify(token, process.env.JWT_REFRESH_KEY);
+
+    const validatePayload = await prisma.users.findUnique({
+      where: {
+        id: decode.id,
+      }
+    });
+    if (
+      !validatePayload ||
+      validatePayload.refresh_token !== token
+    )
+      return next(
+        new customErrorClass(
+          `Invalid Refresh Token Provided`,
+          401,
+          `User account not Found or deleted`,
+        ),
+      );
+
+    const newAccessToken = jwt.sign(
+      {
+        id: validatePayload.id,
+        user_name: validatePayload.user_name,
+        email: validatePayload.email,
+      },
+      process.env.JWT_ACCESS_KEY,
+      { expiresIn: "15m" },
+    );
+    const newRefreshToken = jwt.sign(
+      { id: validatePayload.id },
+      process.env.JWT_REFRESH_KEY,
+      { expiresIn: "7d" },
+    );
+
+    await prisma.users.update({
+      where: {
+        id: validatePayload.id,
+      },
+      data: {
+        refresh_token: newRefreshToken,
+      },
+    });
+
+    res.cookie("refreshToken", newRefreshToken, {
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      sameSite: "strict",
+    });
+
+    res.json({ token: newAccessToken });
+  } catch (error) {
     next(error);
   }
 };
