@@ -19,7 +19,7 @@ app.get('/health',(req,res)=>{
 })
 
 
-app.use('/',auth)
+app.use('/auth',auth)
 
 
 app.use((err,req,res,next)=>{

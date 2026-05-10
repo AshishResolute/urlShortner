@@ -26,7 +26,7 @@ export const signUp = async (req, res, next) => {
       timeStamp: new Date().toLocaleString(),
     });
   } catch (error) {
-    console.log(error.message);
+    if(error.code==='P2002') return next(new customErrorClass(`Email already in use!`,409,`signUp failed!,try again with another email`))
     next(error);
   }
 };
@@ -99,7 +99,7 @@ export const login = async (req, res, next) => {
       timeStamp: new Date().toLocaleString(),
     });
   } catch (error) {
-    console.log(error.message);
+    console.error(error.message);
     next(error);
   }
 };
@@ -112,18 +112,15 @@ export const refresh = async (req, res, next) => {
         new customErrorClass(`Token not recieved`, 401, `Token not found`),
       );
 
-      // jwt.validate returns the payload
+    // jwt.validate returns the payload
     const decode = jwt.verify(token, process.env.JWT_REFRESH_KEY);
 
     const validatePayload = await prisma.users.findUnique({
       where: {
         id: decode.id,
-      }
+      },
     });
-    if (
-      !validatePayload ||
-      validatePayload.refresh_token !== token
-    )
+    if (!validatePayload || validatePayload.refresh_token !== token)
       return next(
         new customErrorClass(
           `Invalid Refresh Token Provided`,
@@ -164,6 +161,37 @@ export const refresh = async (req, res, next) => {
 
     res.json({ token: newAccessToken });
   } catch (error) {
+    console.error(error.message);
+    next(error);
+  }
+};
+
+export const logout = async (req, res, next) => {
+  try {
+    const token = req.cookies.refreshToken;
+    if (!token)
+      return next(
+        new customErrorClass(`Token not recieved`, 401, `Logout failed!`),
+      );
+
+    let decode = jwt.verify(token, process.env.JWT_REFRESH_KEY);
+
+    await prisma.users.update({
+      where: {
+        id: decode.id,
+      },
+      data: {
+        refresh_token: null,
+      },
+    });
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      sameSite: "strict",
+    });
+    res.json({ message: `logged out successfully!` });
+  } catch (error) {
+    console.error(error.message);
     next(error);
   }
 };
