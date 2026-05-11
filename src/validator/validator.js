@@ -47,3 +47,12 @@ export const loginSchema = joi.object({
       "any.only": `Password must have atleast one lowercase,uppercase and a special character`,
     })
 });
+
+
+export const urlSchema = joi.object({
+  url:joi.string().trim().uri().required().messages({
+    'string.empty':`url cannot be empty`,
+    'string.uri':`Invalid URL format`,
+    'string.required':`URL is required`
+  })
+})

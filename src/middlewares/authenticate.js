@@ -19,6 +19,7 @@ export let authenticate = (req, res, next) => {
             );
 
         req.user = decode;
+        console.log(req)
         next();
     } catch (error) {
         console.error(error.message);

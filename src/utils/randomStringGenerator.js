@@ -4,4 +4,9 @@ let generateRandomStringKey = ()=>{
     return crypto.randomBytes(16).toString('hex')
 }
 
-console.log(generateRandomStringKey())
+
+
+export let generateShortCode = ()=>{
+    return crypto.randomBytes(6).toString('base64url');
+}
+
