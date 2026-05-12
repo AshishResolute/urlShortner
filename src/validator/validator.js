@@ -17,10 +17,10 @@ export const signUpSchema = joi.object({
       "string.empty": `Password cannot be empty`,
       "any.only": `password must have atleast one lowercase,uppercase and a special character`,
     }),
-    confirmPassword:joi.valid(joi.ref('password')).required().messages({
-      'any.only':`Passwords dont match`,
-      'any.required':`confirmPassword is required`
-    }),
+  confirmPassword: joi.valid(joi.ref("password")).required().messages({
+    "any.only": `Passwords dont match`,
+    "any.required": `confirmPassword is required`,
+  }),
   user_name: joi.string().trim().min(3).max(30).required().messages({
     "string.min": `user_name cannot be less than 3 characters`,
     "string.max": `user_name cannot be more than 30 characters`,
@@ -45,14 +45,21 @@ export const loginSchema = joi.object({
       "string.max": `Password cannot have more than 28 characters!`,
       "string.empty": `Password cannot be empty`,
       "any.only": `Password must have atleast one lowercase,uppercase and a special character`,
-    })
+    }),
 });
 
-
 export const urlSchema = joi.object({
-  url:joi.string().trim().uri().required().messages({
-    'string.empty':`url cannot be empty`,
-    'string.uri':`Invalid URL format`,
-    'string.required':`URL is required`
-  })
-})
+  url: joi.string().trim().uri().required().messages({
+    "string.empty": `url cannot be empty`,
+    "string.uri": `Invalid URL format`,
+    "string.required": `URL is required`,
+  }),
+});
+
+export const shortCodeSchema = joi.object({
+  short_code: joi.string().trim().length(8).required().messages({
+    "string.empty": `Code cannot be empty!`,
+    "string.required": `Code is required!`,
+    "string.length": `Code must be 8 characters`,
+  }),
+});

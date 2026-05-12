@@ -9,10 +9,7 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser())
 
-app.use((req,res,next)=>{
-    console.log(req);
-    next()
-})
+
 
 app.get('/health',(req,res)=>{
     res.status(200).json({
