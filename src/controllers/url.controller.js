@@ -16,7 +16,7 @@ export const addUrl = async (req, res, next) => {
     let checkUrlExists = await prisma.short_url.findFirst({
       where: {
         original_url: value.url,
-        user_id
+        user_id,
       },
     });
 
@@ -57,11 +57,9 @@ export const redirectUrl = async (req, res, next) => {
         new customErrorClass(`Invalid input provided`, 400, error.message),
       );
 
-    const user_id = req.user.id;
-
     const getUserLongURL = await prisma.short_url.findUnique({
       where: {
-        id: user_id,
+        short_code: value.short_code,
       },
     });
 
@@ -70,7 +68,48 @@ export const redirectUrl = async (req, res, next) => {
         new customErrorClass(`No Urls found`, 404, `Add a url before`),
       );
 
+    await prisma.short_url.update({
+      where: {
+        short_code: value.short_code,
+      },
+      data: {
+        clicks: { increment: 1 },
+      },
+    });
     res.redirect(getUserLongURL.original_url);
+  } catch (error) {
+    console.error(error.message);
+    next(error);
+  }
+};
+
+export const getUserUrls = async (req, res, next) => {
+  try {
+    const user_id = req.user.id;
+
+    const userUrls = await prisma.short_url.findMany({
+      where: {
+        user_id,
+      },
+    });
+
+    if (!userUrls)
+      return res.status(404).json({
+        success: true,
+        message: `You haven't added any Url's yet!`,
+      });
+
+    // let urls=[]
+
+    // userUrls.forEach((data)=>urls.push(data.original_url))
+    // better syntax with just map
+
+    let urls = userUrls.map((data) => data.original_url);
+    res.status(200).json({
+      success: true,
+      message: `Your Url's are!`,
+      urls,
+    });
   } catch (error) {
     console.error(error.message);
     next(error);
