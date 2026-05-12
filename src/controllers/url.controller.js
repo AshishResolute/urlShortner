@@ -115,3 +115,43 @@ export const getUserUrls = async (req, res, next) => {
     next(error);
   }
 };
+
+export const deleteUrl = async (req, res, next) => {
+  try {
+    let { error, value } = shortCodeSchema.validate(req.params);
+    if (error)
+      return next(
+        new customErrorClass(
+          `Invalid code parameter provided`,
+          400,
+          error.message,
+        ),
+      );
+
+    const user_id = req.user.id;
+
+    const deletedUrl = await prisma.short_url.deleteMany({
+      where: {
+        user_id,
+        short_code: value.short_code,
+      },
+    });
+
+    if (!deletedUrl.count)
+      return next(
+        new customErrorClass(
+          `Url not found`,
+          404,
+          `check Your short_code again!`,
+        ),
+      );
+
+    res.status(200).json({
+      success: true,
+      message: `Your Url for ${value.short_code} deleted successfully`,
+    });
+  } catch (error) {
+    console.error(error.message);
+    next(error);
+  }
+};

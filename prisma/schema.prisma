@@ -24,5 +24,5 @@ model short_url {
   clicks       Int      @default(0)
   created_at   DateTime @default(now())
   user_id      Int
-  user         users    @relation(fields: [user_id], references: [id])
+  user         users    @relation(fields: [user_id], references: [id],onDelete: Cascade)
 }

@@ -92,7 +92,7 @@ export const login = async (req, res, next) => {
       httpOnly: true,
       sameSite: "strict",
     });
-    res.status(200).json({
+    res.status(201).json({
       success: true,
       message: `Login successfull!,Welcome Back ${findUserInfo.user_name}`,
       token,
