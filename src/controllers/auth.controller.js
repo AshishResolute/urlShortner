@@ -26,7 +26,14 @@ export const signUp = async (req, res, next) => {
       timeStamp: new Date().toLocaleString(),
     });
   } catch (error) {
-    if(error.code==='P2002') return next(new customErrorClass(`Email already in use!`,409,`signUp failed!,try again with another email`))
+    if (error.code === "P2002")
+      return next(
+        new customErrorClass(
+          `Email already in use!`,
+          409,
+          `signUp failed!,try again with another email`,
+        ),
+      );
     next(error);
   }
 };
@@ -91,7 +98,6 @@ export const login = async (req, res, next) => {
       maxAge: 7 * 24 * 3600 * 1000,
       httpOnly: true,
       sameSite: "strict",
-      path:'/'
     });
     res.status(200).json({
       success: true,
@@ -121,14 +127,27 @@ export const refresh = async (req, res, next) => {
         id: decode.id,
       },
     });
-    if (!validatePayload || validatePayload.refresh_token !== token)
+    if (!validatePayload || validatePayload.refresh_token !== token) {
+      await prisma.users.update({
+        where: {
+          id: decode.id,
+        },
+        data: {
+          refresh_token: null,
+        },
+      });
+      res.clearCookie("refreshToken", {
+        httpOnly: true,
+        sameSite: "strict",
+      });
       return next(
         new customErrorClass(
           `Invalid Refresh Token Provided`,
           401,
-          `User account not Found or deleted`,
+          `Possible token theft detected,user has been logged out from all devices`,
         ),
       );
+    }
 
     const newAccessToken = jwt.sign(
       {
@@ -160,7 +179,7 @@ export const refresh = async (req, res, next) => {
       sameSite: "strict",
     });
 
-    res.json({ token: newAccessToken });
+    res.status(200).json({ token: newAccessToken });
   } catch (error) {
     console.error(error.message);
     next(error);
