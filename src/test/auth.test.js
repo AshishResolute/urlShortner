@@ -2,42 +2,39 @@ import { app } from "../routes/app.js";
 import request from "supertest";
 import { describe, it } from "@jest/globals";
 
+let token;
 beforeAll(async () => {
-  await request(app)
-    .post("/auth/signUp")
-    .send({
-      email: "test@user.com",
-      password: `Test@user`,
-      confirmPassword: `Test@user`,
-      user_name: `Test User`,
-    });
+  await request(app).post("/auth/signUp").send({
+    email: "test@user.com",
+    password: `Test@user`,
+    confirmPassword: `Test@user`,
+    user_name: `Test User`,
+  });
 });
 
 describe("AUTH routes", () => {
+  const agent = request.agent(app);
+
   describe("POST /auth/signup", () => {
     it(`should return 400 status for Invalid Input`, async () => {
-      const res = await request(app)
-        .post("/auth/signUp")
-        .send({
-          email: "testuser.com",
-          password: `Test@user`,
-          confirmPassword: `Test@user`,
-          user_name: `Test User`,
-        });
+      const res = await request(app).post("/auth/signUp").send({
+        email: "testuser.com",
+        password: `Test@user`,
+        confirmPassword: `Test@user`,
+        user_name: `Test User`,
+      });
 
       expect(res.statusCode).toBe(400);
       expect(res.body).toHaveProperty(`message`);
     });
 
     it(`should return 409 if user already exists ie duplicate entry with email`, async () => {
-      const res = await request(app)
-        .post("/auth/signUp")
-        .send({
-          email: "test@user.com",
-          password: `Test@user`,
-          confirmPassword: `Test@user`,
-          user_name: `Test User`,
-        });
+      const res = await request(app).post("/auth/signUp").send({
+        email: "test@user.com",
+        password: `Test@user`,
+        confirmPassword: `Test@user`,
+        user_name: `Test User`,
+      });
 
       expect(res.statusCode).toBe(409);
       expect(res.body).toHaveProperty(`message`);
@@ -86,13 +83,28 @@ describe("AUTH routes", () => {
       expect(res.body).toHaveProperty(`message`);
     });
 
-    it(`Should return 201 for successfull login`, async () => {
-      const res = await request(app)
+    it(`Should return 200 for successfull login`, async () => {
+      const res = await agent
         .post("/auth/login")
         .send({ email: `test@user.com`, password: `Test@user` });
 
       expect(res.statusCode).toBe(200);
       expect(res.body).toHaveProperty(`token`);
+    });
+  });
+
+  describe("POST /auth/refresh", () => {
+    it(`should return 401 if no refreshToken is recieved`, async () => {
+      const res = await request(app).post("/auth/refresh");
+
+      expect(res.statusCode).toBe(401);
+    });
+
+    it("should return 200 if the refreshToken is valid and issue a new access Token", async () => {
+      const res = await agent.post("/auth/refresh");
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toHaveProperty("token");
     });
   });
 });
